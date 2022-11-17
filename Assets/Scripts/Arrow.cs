@@ -2,38 +2,28 @@
 
 public class Arrow : MonoBehaviour
 {
-    [SerializeField] private float speed;
-    [SerializeField] private float angle;
-    private Vector3 _direction;
-    private Rigidbody2D _rigidbody2D;
+
+    public Rigidbody2D rigid2D;
 
     private void Awake()
     {
-        _rigidbody2D = GetComponent<Rigidbody2D>();
-    }
-
-    private void Start()
-    {
-        var tanAngle = angle * Mathf.Deg2Rad;
-        Fire(speed, tanAngle);
+        rigid2D = GetComponent<Rigidbody2D>();
     }
 
     public void Init(Ashe attacker, Enemy target)
     {
-        _direction = target.transform.position - attacker.transform.position;
-        _direction.Normalize();
+
     }
 
-    // private void Update()
-    // {
-    //     transform.position += _direction * (speed * Time.deltaTime);
-    // }
-    
-    private void Fire(float v0, float angle)
+    private void Update()
     {
-        float x = v0 * Time.deltaTime * Mathf.Cos(angle);
-        float y = v0 * Time.deltaTime * Mathf.Sin(angle) - (1f / 2f) * -Physics.gravity.y * Mathf.Pow(Time.deltaTime, 2);
-        var force = new Vector3(x, y, 0);
-        _rigidbody2D.AddForce(force, ForceMode2D.Impulse);
+        var velocity = rigid2D.velocity;
+        var angle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0, 0, angle);
+    }
+
+    private void OnTriggerEnter2D(Collider2D col)
+    {
+        Debug.Log("hit enemy");
     }
 }

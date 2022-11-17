@@ -9,6 +9,8 @@ public class Ashe : MonoBehaviour
     [SerializeField] private DetectEnemy detectEnemy;
     [SerializeField] private float attackSpeed;
     [SerializeField] private float dame;
+    [SerializeField] private Arrow arrowPrefab;
+    [SerializeField] private GameObject launchPosition;
 
     private Enemy _target;
     private Animator _animator;
@@ -67,6 +69,8 @@ public class Ashe : MonoBehaviour
 
     private void SpawnArrow()
     {
-        Debug.Log("Attack");
+        var arrow = Instantiate<Arrow>(arrowPrefab);
+        arrow.transform.position = launchPosition.transform.position;
+        ProjectileLauncher.Launch(arrow.rigid2D, launchPosition, _target.gameObject);
     }
 }
