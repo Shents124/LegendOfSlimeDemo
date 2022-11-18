@@ -1,75 +1,83 @@
-using System.Collections;
+using System;
 using UnityEngine;
 
-public delegate void CombatEvent(float damage, Ashe attacker,
-    Enemy target);
+public delegate void CombatEvent(int damage, Ashe attacker, Enemy target);
 
 public class Ashe : MonoBehaviour
 {
-    [SerializeField] private DetectEnemy detectEnemy;
     [SerializeField] private float attackSpeed;
-    [SerializeField] private float dame;
-    [SerializeField] private Arrow arrowPrefab;
+    [SerializeField] private int damage;
     [SerializeField] private GameObject launchPosition;
+    [SerializeField] private BulletSpawner bulletSpawner;
 
+    public int Damage => damage;
+    public event CombatEvent OnAttack;
+    public Action<Enemy> OnAttackDone;
+    public bool hasTarget;
+    
     private Enemy _target;
     private Animator _animator;
-    public event CombatEvent OnAttack;
-    public event CombatEvent OnEnemyDie;
-
-    private bool _isAttack;
-    private static readonly int AttackParaAnim = Animator.StringToHash("attack");
-    private WaitForSeconds _waitForSeconds;
-
+   
+    private static readonly int AttackParamAnim = Animator.StringToHash("attack");
+   
+    private int _attackTime;
+    private int _currentAttackTime;
+    private float _attackDelay;
+    private float _attackCooldownLeft;
+    
     private void Awake()
     {
         _animator = GetComponent<Animator>();
+        OnAttack += HandleOnAttack;
     }
-
+    
     private void Start()
     {
-        detectEnemy.OnDetectEnemy += HandleOnDetectEnemy;
-        _waitForSeconds = new WaitForSeconds(1 / attackSpeed);
+        _attackDelay = 1 / attackSpeed;
     }
 
-    private void HandleOnDetectEnemy()
+    private void Update()
     {
-        if (_isAttack)
-            return;
-        if (detectEnemy.GetEnemy(out var enemy) == false)
+        _attackCooldownLeft -= Time.deltaTime;
+        if (hasTarget == false || _attackCooldownLeft > 0) 
             return;
 
-        _target = enemy;
-        StartCoroutine(Attack());
+        _currentAttackTime++;
+        _animator.SetFloat(AttackParamAnim, attackSpeed);
+        _attackCooldownLeft = _attackDelay;
+        // if(_currentAttackTime >= _attackTime)
+        //     OnAttackDone?.Invoke(_target);
     }
 
-    private IEnumerator Attack()
+    public void EventOnAttack(int damage, Ashe attacker, Enemy target)
     {
-        _isAttack = true;
-        var timeDelay = 1 / attackSpeed;
-        while (_target.isDead == false)
-        {
-            yield return CoroutineAttack();
-        }
-
-        if (detectEnemy.GetEnemy(out var enemy) == false)
-        {
-            _isAttack = false;
-            yield break;
-        }
-
-        _target = enemy;
+        OnAttack?.Invoke(damage, attacker, target);
     }
-
-    private IEnumerator CoroutineAttack()
+    
+    private void HandleOnAttack(int damage, Ashe attacker, Enemy target)
     {
-        _animator.SetFloat(AttackParaAnim, attackSpeed);
-        yield return _waitForSeconds;
+        throw new System.NotImplementedException();
     }
 
+    public void SetTarget(Enemy target, int attackTime)
+    {
+        _target = target;
+        _attackTime = attackTime;
+        hasTarget = true;
+    }
+
+    public void RemoveTarget()
+    {
+        hasTarget = false;
+        _animator.SetFloat(AttackParamAnim, 1);
+    }
+    
     private void SpawnArrow()
     {
-        var arrow = Instantiate<Arrow>(arrowPrefab);
+        if(hasTarget == false)
+            return;
+        var arrow = bulletSpawner.GetBullet();
+        arrow.Init(this, _target, damage);
         arrow.transform.position = launchPosition.transform.position;
         ProjectileLauncher.Launch(arrow.rigid2D, launchPosition, _target.gameObject);
     }

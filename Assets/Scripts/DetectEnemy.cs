@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class DetectEnemy : MonoBehaviour
@@ -24,7 +23,10 @@ public class DetectEnemy : MonoBehaviour
    private void OnTriggerEnter2D(Collider2D col)
    {
       var enemy = col.GetComponent<Enemy>();
-      _enemies.Add(enemy);
-      OnDetectEnemy?.Invoke();
+      if (enemy)
+      {
+         _enemies.Add(enemy);
+         OnDetectEnemy?.Invoke();
+      }
    }
 }
